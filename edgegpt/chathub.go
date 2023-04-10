@@ -42,6 +42,7 @@ type ChatHub struct {
 	// The websocket connection.
 	ws      *websocket.Conn
 	request *ChatHubRequest
+	w       http.ResponseWriter
 }
 
 func NewChatHub(addr, path string, conversation *Conversation) *ChatHub {
@@ -99,12 +100,12 @@ func (chathub *ChatHub) initialHandshake() error {
 }
 
 // Ask a question to the bot
-func (chathub *ChatHub) askStream(prompt string, conversationStyle ConversationStyle, callback func(answer *Answer)) error {
+func (chathub *ChatHub) askStream(prompt string, conversationStyle ConversationStyle,
+	callback func(w http.ResponseWriter, answer *Answer)) error {
 	err := chathub.initialHandshake()
 	if err != nil {
 		return err
 	}
-	log.Println("initialHandshake success")
 	// Construct a ChatHub request
 	chathub.request.Update(prompt, conversationStyle)
 	// Send request
@@ -124,7 +125,7 @@ func (chathub *ChatHub) askStream(prompt string, conversationStyle ConversationS
 		}
 		answer := NewAnswer(string(message))
 		if callback != nil {
-			callback(answer)
+			callback(chathub.w, answer)
 		}
 		if answer.IsDone() {
 			return nil

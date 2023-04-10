@@ -1,8 +1,6 @@
 package edgegpt
 
-import (
-	"log"
-)
+import "net/http"
 
 // Combines everything to make it seamless
 type ChatBot struct {
@@ -35,7 +33,6 @@ func (bot *ChatBot) Init() error {
 		return err
 	}
 	bot.chatHub = NewChatHub(bot.addr, bot.path, conversation)
-	log.Println("init success")
 	return nil
 }
 
@@ -46,14 +43,13 @@ it will be called every time data is received,
 if you only want to get the final result,
 you can use `answer.IsDone()` to judge whether it is finished
 */
-func (bot *ChatBot) Ask(prompt string, conversationStyle ConversationStyle, callback func(answer *Answer)) error {
+func (bot *ChatBot) Ask(prompt string, conversationStyle ConversationStyle, callback func(w http.ResponseWriter, answer *Answer)) error {
 	// defer bot.chatHub.Close()
 	err := bot.chatHub.newConnect()
 	if err != nil {
 		return err
 	}
 	defer bot.chatHub.Close()
-	log.Println("connect chathub success")
 	return bot.chatHub.askStream(prompt, conversationStyle, callback)
 }
 
